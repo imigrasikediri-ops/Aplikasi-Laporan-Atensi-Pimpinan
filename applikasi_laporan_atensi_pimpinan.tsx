@@ -1,0 +1,367 @@
+import React, { useState, useRef } from 'react';
+import { FileText, Printer, RefreshCcw, LayoutDashboard, CheckCircle, Copy } from 'lucide-react';
+
+export default function LaporanAtensiApp() {
+  // Fungsi helper untuk mendapatkan tanggal hari ini format YYYY-MM-DD untuk input date
+  const getTodayDate = () => {
+    const d = new Date();
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  // Fungsi helper untuk memformat tanggal ke bahasa Indonesia (contoh: 19 Juni 2026)
+  const formatTanggalIndo = (dateStr) => {
+    if (!dateStr) return '';
+    const d = new Date(dateStr);
+    return new Intl.DateTimeFormat('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }).format(d);
+  };
+
+  // State untuk menyimpan data form
+  const [formData, setFormData] = useState({
+    tanggal: getTodayDate(),
+    kepadaYth: '1. Direktur Jenderal Imigrasi\n2. Sekretaris Direktorat Jenderal Imigrasi\n3. Para BOD Direktorat Jenderal Imigrasi\n4. Kepala Kantor Wilayah Direktorat Jenderal Imigrasi Jawa Timur',
+    kegiatan: '',
+    pelaksanaan: '',
+    uraian: '',
+    kesimpulan: '',
+    penutup: 'Demikian laporan ini dibuat untuk menjadi periksa. Mohon petunjuk dan arahan lebih lanjut.'
+  });
+
+  // Handler untuk mengupdate state setiap kali ada ketikan di form
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  // State untuk animasi notifikasi sukses copy
+  const [isCopied, setIsCopied] = useState(false);
+
+  // Handler untuk mengosongkan form
+  const handleReset = () => {
+    setFormData({
+      tanggal: getTodayDate(),
+      kepadaYth: '1. Direktur Jenderal Imigrasi\n2. Sekretaris Direktorat Jenderal Imigrasi\n3. Para BOD Direktorat Jenderal Imigrasi\n4. Kepala Kantor Wilayah Direktorat Jenderal Imigrasi Jawa Timur',
+      kegiatan: '',
+      pelaksanaan: '',
+      uraian: '',
+      kesimpulan: '',
+      penutup: 'Demikian laporan ini dibuat untuk menjadi periksa. Mohon petunjuk dan arahan lebih lanjut.'
+    });
+  };
+
+  // Handler untuk mencetak dokumen (menyembunyikan UI lain melalui CSS print)
+  const handlePrint = () => {
+    window.print();
+  };
+
+  // Handler untuk menyalin teks ke format WhatsApp
+  const handleCopyToWA = () => {
+    const textToCopy = `*LAPORAN ATENSI PIMPINAN*
+
+*Kepada Yth:*
+${formData.kepadaYth}
+
+Bersama ini kami sampaikan laporan kegiatan, sebagai berikut:
+
+*I. Kegiatan*
+${formData.kegiatan || '-'}
+
+*II. Pelaksanaan Kegiatan*
+${formData.pelaksanaan || '-'}
+
+*III. Uraian Kegiatan*
+${formData.uraian || '-'}
+
+*IV. Kesimpulan*
+${formData.kesimpulan || '-'}
+
+*V. Penutup*
+${formData.penutup || '-'}
+
+Kediri, ${formatTanggalIndo(formData.tanggal)}
+Hormat kami,
+Kepala Kantor,
+
+*Antonius Frizky Saniscara Cahya Putra*`;
+
+    navigator.clipboard.writeText(textToCopy).then(() => {
+      setIsCopied(true);
+      setTimeout(() => setIsCopied(false), 2500); // Notifikasi kembali normal setelah 2.5 detik
+    });
+  };
+
+  return (
+    <div className="min-h-screen bg-slate-50 text-slate-800 font-sans p-4 md:p-8">
+      {/* Header Aplikasi (Sembunyikan saat di-print) */}
+      <header className="mb-8 print:hidden flex items-center justify-between bg-white p-4 rounded-xl shadow-sm border border-slate-100 flex-wrap gap-4">
+        <div className="flex items-center gap-3">
+          <div className="bg-blue-600 p-2 rounded-lg text-white">
+            <LayoutDashboard size={24} />
+          </div>
+          <div>
+            <h1 className="text-xl md:text-2xl font-bold text-slate-800">Aplikasi Laporan Atensi Pimpinan</h1>
+            <p className="text-sm text-slate-500">Buat, pratinjau, cetak, dan salin ke WA dengan mudah.</p>
+          </div>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <button 
+            onClick={handleReset}
+            className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors"
+          >
+            <RefreshCcw size={16} />
+            <span className="hidden sm:inline">Reset</span>
+          </button>
+          <button 
+            onClick={handleCopyToWA}
+            className={`flex items-center gap-2 px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors shadow-sm ${isCopied ? 'bg-green-600 hover:bg-green-700' : 'bg-emerald-600 hover:bg-emerald-700'}`}
+          >
+            {isCopied ? <CheckCircle size={16} /> : <Copy size={16} />}
+            <span className="hidden sm:inline">{isCopied ? 'Tersalin ke WA!' : 'Salin ke WA'}</span>
+          </button>
+          <button 
+            onClick={handlePrint}
+            className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors shadow-sm"
+          >
+            <Printer size={16} />
+            <span className="hidden sm:inline">Cetak / PDF</span>
+          </button>
+        </div>
+      </header>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-7xl mx-auto">
+        
+        {/* KOLOM KIRI: Form Input (Sembunyikan saat di-print) */}
+        <div className="space-y-6 print:hidden">
+          <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+            <div className="flex items-center gap-2 mb-6 border-b border-slate-100 pb-4">
+              <FileText className="text-blue-600" size={20} />
+              <h2 className="text-lg font-semibold text-slate-800">Form Pengisian Laporan</h2>
+            </div>
+
+            <div className="space-y-5">
+              {/* Tanggal Laporan */}
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">
+                  Tanggal Laporan:
+                </label>
+                <input
+                  type="date"
+                  name="tanggal"
+                  value={formData.tanggal}
+                  onChange={handleChange}
+                  className="w-full px-4 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+                />
+              </div>
+
+              {/* Kepada Yth */}
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">
+                  Kepada Yth:
+                </label>
+                <textarea
+                  name="kepadaYth"
+                  value={formData.kepadaYth}
+                  onChange={handleChange}
+                  rows="4"
+                  className="w-full px-4 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all resize-y"
+                ></textarea>
+              </div>
+
+              {/* 1. Kegiatan */}
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">
+                  I. Kegiatan
+                </label>
+                <input
+                  type="text"
+                  name="kegiatan"
+                  value={formData.kegiatan}
+                  onChange={handleChange}
+                  placeholder="Contoh: Rapat Koordinasi Lintas Sektoral..."
+                  className="w-full px-4 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+                />
+              </div>
+
+              {/* 2. Pelaksanaan Kegiatan */}
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">
+                  II. Pelaksanaan Kegiatan
+                </label>
+                <textarea
+                  name="pelaksanaan"
+                  value={formData.pelaksanaan}
+                  onChange={handleChange}
+                  rows="2"
+                  placeholder="Contoh: Hari Selasa, 19 Juni 2026 pukul 09.00 WIB bertempat di Ruang Rapat Utama."
+                  className="w-full px-4 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all resize-y"
+                ></textarea>
+              </div>
+
+              {/* 3. Uraian Kegiatan */}
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">
+                  III. Uraian Kegiatan
+                </label>
+                <textarea
+                  name="uraian"
+                  value={formData.uraian}
+                  onChange={handleChange}
+                  rows="6"
+                  placeholder="Jelaskan secara detail jalannya kegiatan, poin-poin yang dibahas, dan dinamika yang terjadi..."
+                  className="w-full px-4 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all resize-y"
+                ></textarea>
+                <p className="text-xs text-slate-500 mt-1">Tekan 'Enter' untuk membuat paragraf baru.</p>
+              </div>
+
+              {/* 4. Kesimpulan */}
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">
+                  IV. Kesimpulan
+                </label>
+                <textarea
+                  name="kesimpulan"
+                  value={formData.kesimpulan}
+                  onChange={handleChange}
+                  rows="3"
+                  placeholder="Tuliskan kesimpulan dari kegiatan tersebut..."
+                  className="w-full px-4 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all resize-y"
+                ></textarea>
+              </div>
+
+              {/* 5. Penutup */}
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">
+                  V. Penutup
+                </label>
+                <textarea
+                  name="penutup"
+                  value={formData.penutup}
+                  onChange={handleChange}
+                  rows="2"
+                  className="w-full px-4 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all resize-y"
+                ></textarea>
+              </div>
+
+            </div>
+          </div>
+        </div>
+
+        {/* KOLOM KANAN: Document Preview (Ditampilkan penuh saat di-print) */}
+        <div className="print:absolute print:inset-0 print:w-full print:m-0 print:p-0">
+          <div className="sticky top-8 bg-white p-8 md:p-12 min-h-[842px] w-full max-w-[595px] mx-auto shadow-lg print:shadow-none print:max-w-none print:w-full border border-slate-200 print:border-none font-serif text-black">
+            
+            {/* Header Dokumen Resmi */}
+            <div className="text-center mb-8 pb-4 border-b-2 border-black">
+              <h1 className="text-xl font-bold uppercase tracking-wide">Laporan Atensi Pimpinan</h1>
+            </div>
+
+            {/* Konten Dokumen */}
+            <div className="space-y-6 text-sm md:text-base leading-relaxed">
+              
+              {/* Kepada Yth */}
+              <div className="mb-6">
+                <span className="font-bold inline-block mb-1">Kepada Yth:</span>
+                <div className="whitespace-pre-wrap ml-4 text-justify">
+                  {formData.kepadaYth || <span className="text-gray-300 italic">Penerima laporan...</span>}
+                </div>
+              </div>
+
+              {/* Kalimat Pengantar */}
+              <div className="mb-6 text-justify">
+                Bersama ini kami sampaikan laporan kegiatan, sebagai berikut:
+              </div>
+
+              {/* 1. Kegiatan */}
+              <div className="flex">
+                <div className="w-8 font-bold">I.</div>
+                <div className="flex-1">
+                  <span className="font-bold uppercase inline-block mb-1">Kegiatan</span>
+                  <div className="whitespace-pre-wrap text-justify">
+                    {formData.kegiatan || <span className="text-gray-300 italic">Nama kegiatan akan tampil di sini...</span>}
+                  </div>
+                </div>
+              </div>
+
+              {/* 2. Pelaksanaan */}
+              <div className="flex">
+                <div className="w-8 font-bold">II.</div>
+                <div className="flex-1">
+                  <span className="font-bold uppercase inline-block mb-1">Pelaksanaan Kegiatan</span>
+                  <div className="whitespace-pre-wrap text-justify">
+                    {formData.pelaksanaan || <span className="text-gray-300 italic">Waktu dan tempat pelaksanaan...</span>}
+                  </div>
+                </div>
+              </div>
+
+              {/* 3. Uraian */}
+              <div className="flex">
+                <div className="w-8 font-bold">III.</div>
+                <div className="flex-1">
+                  <span className="font-bold uppercase inline-block mb-1">Uraian Kegiatan</span>
+                  <div className="whitespace-pre-wrap text-justify">
+                    {formData.uraian || <span className="text-gray-300 italic">Detail uraian kegiatan...</span>}
+                  </div>
+                </div>
+              </div>
+
+              {/* 4. Kesimpulan */}
+              <div className="flex">
+                <div className="w-8 font-bold">IV.</div>
+                <div className="flex-1">
+                  <span className="font-bold uppercase inline-block mb-1">Kesimpulan</span>
+                  <div className="whitespace-pre-wrap text-justify">
+                    {formData.kesimpulan || <span className="text-gray-300 italic">Kesimpulan kegiatan...</span>}
+                  </div>
+                </div>
+              </div>
+
+              {/* 5. Penutup */}
+              <div className="flex">
+                <div className="w-8 font-bold">V.</div>
+                <div className="flex-1">
+                  <span className="font-bold uppercase inline-block mb-1">Penutup</span>
+                  <div className="whitespace-pre-wrap text-justify">
+                    {formData.penutup}
+                  </div>
+                </div>
+              </div>
+
+            </div>
+
+            {/* Area Tanda Tangan (Opsional, biasa ada di surat formal) */}
+            <div className="mt-20 flex justify-end">
+              <div className="w-80 text-center text-sm md:text-base">
+                <p className="mb-1">Kediri, {formatTanggalIndo(formData.tanggal)}</p>
+                <p className="mb-1">Hormat kami,</p>
+                <p className="mb-20">Kepala Kantor,</p>
+                <p className="font-bold underline uppercase">Antonius Frizky Saniscara Cahya Putra</p>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+
+      {/* Styles khusus untuk proses print dokumen */}
+      <style dangerouslySetInnerHTML={{__html: `
+        @media print {
+          body {
+            background-color: white !important;
+            margin: 0;
+            padding: 0;
+          }
+          @page {
+            size: A4;
+            margin: 2cm;
+          }
+        }
+      `}} />
+    </div>
+  );
+}
